@@ -2,27 +2,12 @@
 #include <stdlib.h>
 #include <chrono>
 
-struct Pixel {
-    int r, g, b;
-    Pixel(int r, int g, int b) {
-
-    };
-
-    Pixel() {
-        r = 0;
-        g = 0;
-        b = 0;
-    };
-};
-
 int main()
 {
 
     const unsigned int WIDTH = 1920u;
     const unsigned int HEIGHT = 1080u;
     const int FPS = 120;
-
-    std::vector<std::vector<Pixel>> screen(HEIGHT, std::vector<Pixel>(WIDTH));
 
     auto window = sf::RenderWindow(sf::VideoMode({WIDTH, HEIGHT}), "CMake SFML Project");
     window.setFramerateLimit(FPS);
@@ -32,9 +17,12 @@ int main()
         return -1;
     }
 
-
-    sf::Text text(font);
+    sf::Image frame;
+    frame.resize(sf::Vector2u(WIDTH, HEIGHT));
     
+
+
+    sf::Text text(font);    
     text.setCharacterSize(50);
     text.setFillColor(sf::Color::White);
 
@@ -42,6 +30,13 @@ int main()
     auto start = std::chrono::high_resolution_clock::now();
 
     int framecount = 0;
+
+    for(unsigned int i = 50; i < 150; i++) {
+        for (unsigned int j = 50; j < 150; j++) {
+            
+            frame.setPixel(sf::Vector2u(i, j), sf::Color {255, 0, 0, 255});
+        }
+    }
     
 
     while (window.isOpen())
@@ -72,8 +67,13 @@ int main()
 
         window.clear();
 
+        sf::Texture texture;
+        texture.loadFromImage(frame);
+        sf::Sprite sprite(texture);
+        window.draw(sprite);
+    
         window.draw(text);
-
+        
 
         window.display();
         
