@@ -10,6 +10,7 @@
 float buffloat(char buffer[4]) {
     float result;
     std::memcpy(&result, buffer, sizeof(float));
+    std::cout << result << "\n";
     return result;
 }
 
@@ -31,20 +32,22 @@ std::vector<std::vector<float>> getNormals(std::string filepath) {
     }
 
     file.seekg(80);
-    char buffer[4];
-    int tris = 0;
-    file.read(buffer, 4);
-    tris = realtris(buffer);
+    int tris;
+    file.read(reinterpret_cast<char*>(&tris), sizeof(int));
+
 
 
     std::vector<std::vector<float>> normals;
     for (int i = 0; i < tris; i++) {
         std::vector<float> normal;
         for (int f = 0; f < 3; f++) {
-            file.seekg(84 + 50*i + 3 * f);
-            char b[4];
-            file.read(b, 4);
-            normal.push_back(buffloat(b));
+            file.seekg(84 + 50*i + 4 * f);
+            float fl;
+            file.read(reinterpret_cast<char*>(&fl), sizeof(float));
+            
+
+            
+            normal.push_back(fl);
         }
         normals.push_back(normal);
 
@@ -60,10 +63,8 @@ std::vector<std::vector<std::vector<float>>> getTriangles(std::string filepath) 
     }
 
     file.seekg(80);
-    char buffer[4];
-    int tris = 0;
-    file.read(buffer, 4);
-    tris = buffloat(buffer);
+    int tris;
+    file.read(reinterpret_cast<char*>(&tris), sizeof(int));
     
     std::vector<std::vector<std::vector<float>>> triangles;
     for (int i = 0; i < tris; i++) {
@@ -72,10 +73,10 @@ std::vector<std::vector<std::vector<float>>> getTriangles(std::string filepath) 
         for (int v = 0; v < 3; v++) {
             std::vector<float> vertex;
             for (int f = 0; f < 3; f++) {
-                file.seekg(84+50*i + 12 + 3*v + 3*f);
-                char b[4];
-                file.read(b, 4);
-                vertex.push_back(buffloat(b));
+                file.seekg(84+50*i + 12 + 12*v + 4*f);
+                float fl;
+                file.read(reinterpret_cast<char*>(&fl), sizeof(float));
+                vertex.push_back(fl);
             }
             triangle.push_back(vertex);
         }
