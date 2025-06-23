@@ -25,7 +25,7 @@ int realtris(char buffer[4]) {
 }
 
 
-std::vector<std::vector<float>> getNormals(std::string filepath) {
+std::vector<std::array<float, 3>> getNormals(std::string filepath) {
     std::ifstream file(filepath, std::ios::binary | std::ios::ate); // open at end
     if (!file) {
         throw std::invalid_argument("invalid file");
@@ -37,9 +37,9 @@ std::vector<std::vector<float>> getNormals(std::string filepath) {
 
 
 
-    std::vector<std::vector<float>> normals;
+    std::vector<std::array<float, 3>> normals;
     for (int i = 0; i < tris; i++) {
-        std::vector<float> normal;
+        std::array<float, 3> normal;
         for (int f = 0; f < 3; f++) {
             file.seekg(84 + 50*i + 4 * f);
             float fl;
@@ -47,7 +47,7 @@ std::vector<std::vector<float>> getNormals(std::string filepath) {
             
             if (f == 2) { fl *= -1; } // z correction
             
-            normal.push_back(fl);
+            normal[f] = fl;
         }
         normals.push_back(normal);
 
@@ -56,7 +56,7 @@ std::vector<std::vector<float>> getNormals(std::string filepath) {
     return normals;
 }
 
-std::vector<std::vector<std::vector<float>>> getTriangles(std::string filepath) {
+std::vector<std::array<std::array<float, 3>, 3>> getTriangles(std::string filepath) {
     std::ifstream file(filepath, std::ios::binary | std::ios::ate); // open at end
     if (!file) {
         throw std::invalid_argument("invalid file");
@@ -66,20 +66,22 @@ std::vector<std::vector<std::vector<float>>> getTriangles(std::string filepath) 
     int tris;
     file.read(reinterpret_cast<char*>(&tris), sizeof(int));
     
-    std::vector<std::vector<std::vector<float>>> triangles;
+    std::vector<std::array<std::array<float, 3>, 3>> triangles;
     for (int i = 0; i < tris; i++) {
 
-        std::vector<std::vector<float>> triangle;
+        std::array<std::array<float, 3>, 3> triangle;
         for (int v = 0; v < 3; v++) {
-            std::vector<float> vertex;
+            std::array<float, 3> vertex;
+            
             for (int f = 0; f < 3; f++) {
                 file.seekg(84+50*i + 12 + 12*v + 4*f);
                 float fl;
                 file.read(reinterpret_cast<char*>(&fl), sizeof(float));
                 if (f == 2) { fl *= -1; } // z correction
-                vertex.push_back(fl);
+
+                vertex[f] = fl;
             }
-            triangle.push_back(vertex);
+            triangle[v] = vertex;
         }
         triangles.push_back(triangle);
         

@@ -61,7 +61,7 @@ int main()
 
     const unsigned int WIDTH = 1920u;
     const unsigned int HEIGHT = 1080u;
-    const int FPS = 120;
+    const int FPS = 60;
 
     auto window = sf::RenderWindow(sf::VideoMode({WIDTH, HEIGHT}), "renderer");
     window.setFramerateLimit(FPS);
@@ -75,9 +75,9 @@ int main()
 
 
     log("Loading " + stlpath + "...");
-    std::vector<std::vector<float>> normals = getNormals(stlpath);
+    std::vector<std::array<float, 3>>  normals = getNormals(stlpath);
     log("Normals: \t" + std::to_string(normals.size()));
-    std::vector<std::vector<std::vector<float>>> triangles = getTriangles(stlpath);
+    std::vector<std::array<std::array<float, 3>, 3>> triangles = getTriangles(stlpath);
     log("Triangles: \t" + std::to_string(triangles.size()));
     log("(These two numbers should be the same!)");
 
@@ -155,17 +155,17 @@ int main()
             sf::VertexArray tri(sf::PrimitiveType::Triangles, 3);
 
             float dp; // simulating viewport vector of (0, 1, 0)
-            std::vector<float> normal = normals.at(i);
-            if (normal.at(1) >= 0) {
+            std::array<float, 3> normal = normals[i];
+            if (normal[1] >= 0) {
                 continue;
             }
 
 
 
-            std::vector<std::vector<float>> triangle = triangles.at(i);
-            tri[0].position = sf::Vector2f(triangle.at(0).at(0) * SCALE + offx, triangle.at(0).at(2) * SCALE + offy);
-            tri[1].position = sf::Vector2f(triangle.at(1).at(0) * SCALE + offx, triangle.at(1).at(2) * SCALE + offy);
-            tri[2].position = sf::Vector2f(triangle.at(2).at(0) * SCALE + offx, triangle.at(2).at(2) * SCALE + offy);
+            std::array<std::array<float, 3>, 3> triangle = triangles[i];
+            tri[0].position = sf::Vector2f(triangle[0][0] * SCALE + offx, triangle[0][2] * SCALE + offy);
+            tri[1].position = sf::Vector2f(triangle[1][0] * SCALE + offx, triangle[1][2] * SCALE + offy);
+            tri[2].position = sf::Vector2f(triangle[2][0] * SCALE + offx, triangle[2][2] * SCALE + offy);
 
             tri[0].color = sf::Color::White;
             tri[1].color = sf::Color::White;

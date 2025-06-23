@@ -4,8 +4,8 @@
 #include <SFML/Graphics.hpp>
 
 
-std::vector<std::vector<float>> getNormals(std::string filepath);
-std::vector<std::vector<std::vector<float>>> getTriangles(std::string filepath);
+std::vector<std::array<float, 3>> getNormals(std::string filepath);
+std::vector<std::array<std::array<float, 3>, 3>> getTriangles(std::string filepath) ;
 
 
 
