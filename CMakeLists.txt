@@ -15,9 +15,11 @@ FetchContent_Declare(SFML
     SYSTEM)
 FetchContent_MakeAvailable(SFML)
 
-add_executable(renderer src/main.cpp)
+file(GLOB SOURCES "src/*.cpp")
+
+add_executable(renderer ${SOURCES})
 target_compile_features(renderer PRIVATE cxx_std_17)
-if(WIN32)
-    set_target_properties(renderer PROPERTIES WIN32_EXECUTABLE TRUE)
-endif()
+# if(WIN32)
+#     set_target_properties(renderer PROPERTIES WIN32_EXECUTABLE TRUE)
+# endif()
 target_link_libraries(renderer PRIVATE SFML::Graphics)

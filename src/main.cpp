@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <chrono>
 #include <fstream>
+#include "loadstl.hpp"
+#include <iostream>
 
 sf::Font font;
 sf::Text debug(font);
@@ -9,7 +11,7 @@ sf::Text debug(font);
 std::string debugmsg;
 
 void log(std::string t) {
-    debugmsg = t;
+    std::cout << t << "\n";
 }
 
 bool checkASCII(std::string filepath) {
@@ -18,14 +20,13 @@ bool checkASCII(std::string filepath) {
 
     std::ifstream file(filename, std::ios::binary | std::ios::ate); // open at end
     if (!file) {
-        // log("1");
-        return false;
+        throw std::invalid_argument("invalid file");
     }
 
     std::streamsize fileSize = file.tellg(); // get size
     if (fileSize < bytesToRead) {
         // log("2");
-        return false;
+        throw std::invalid_argument("invalid file");
     }
 
     file.seekg(0); // go back to beginning
@@ -58,14 +59,25 @@ int main()
     const unsigned int HEIGHT = 1080u;
     const int FPS = 120;
 
-    auto window = sf::RenderWindow(sf::VideoMode({WIDTH, HEIGHT}), "CMake SFML Project");
+    auto window = sf::RenderWindow(sf::VideoMode({WIDTH, HEIGHT}), "renderer");
     window.setFramerateLimit(FPS);
+
+    log("Renderer v0.1");
 
     
 
-    std::string stlpath = "C:/Users/ms_lu/Downloads/cube.stl";
+    std::string stlpath = "C:/Users/ms_lu/Downloads/utahteapot.stl";
     bool ascii = checkASCII(stlpath);
-    log(ascii ? "true" : "false");
+
+
+    log("Loading " + stlpath + "...");
+    std::vector<std::vector<float>> normals = getNormals(stlpath);
+    log("Normals: \t" + std::to_string(normals.size()));
+    std::vector<std::vector<std::vector<float>>> triangles = getTriangles(stlpath);
+    log("Triangles: \t" + std::to_string(triangles.size()));
+    log("(These two numbers should be the same!)");
+
+
 
     if (!font.openFromFile("Mplus.ttf")) {
         return -1;
@@ -144,14 +156,3 @@ int main()
 
     }
 }
-
-#ifdef _WIN32
-#include <windows.h>
-
-// Forward declare your main
-extern int main();
-
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-    return main();
-}
-#endif
