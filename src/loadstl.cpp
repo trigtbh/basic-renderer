@@ -45,7 +45,7 @@ std::vector<std::vector<float>> getNormals(std::string filepath) {
             float fl;
             file.read(reinterpret_cast<char*>(&fl), sizeof(float));
             
-
+            if (f == 2) { fl *= -1; } // z correction
             
             normal.push_back(fl);
         }
@@ -76,6 +76,7 @@ std::vector<std::vector<std::vector<float>>> getTriangles(std::string filepath) 
                 file.seekg(84+50*i + 12 + 12*v + 4*f);
                 float fl;
                 file.read(reinterpret_cast<char*>(&fl), sizeof(float));
+                if (f == 2) { fl *= -1; } // z correction
                 vertex.push_back(fl);
             }
             triangle.push_back(vertex);

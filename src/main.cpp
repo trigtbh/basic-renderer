@@ -81,7 +81,7 @@ int main()
     log("Triangles: \t" + std::to_string(triangles.size()));
     log("(These two numbers should be the same!)");
 
-    const int SCALE = -10;
+    const int SCALE = 10;
     const int offx = 500;
     const int offy = 500;
 
