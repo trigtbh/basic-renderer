@@ -48,16 +48,20 @@ bool checkASCII(std::string filepath) {
 
 
 
+
 int main()
 {
 
+    float pitch, yaw = 0; // camera vertical, horizontal rotation
+    // no roll yet because i dont want to deal with that
     
+    float x, y, z = 0;
 
 
 
     const unsigned int WIDTH = 1920u;
     const unsigned int HEIGHT = 1080u;
-    const int FPS = 120;
+    const int FPS = 10;
 
     auto window = sf::RenderWindow(sf::VideoMode({WIDTH, HEIGHT}), "renderer");
     window.setFramerateLimit(FPS);
@@ -76,6 +80,15 @@ int main()
     std::vector<std::vector<std::vector<float>>> triangles = getTriangles(stlpath);
     log("Triangles: \t" + std::to_string(triangles.size()));
     log("(These two numbers should be the same!)");
+
+    const int SCALE = -10;
+    const int offx = 500;
+    const int offy = 500;
+
+
+
+
+
 
 
 
@@ -107,7 +120,6 @@ int main()
         }
     }
     
-    // log("ok!");
 
     while (window.isOpen())
     {
@@ -139,12 +151,19 @@ int main()
 
         window.clear();
 
-        sf::Texture texture;
-        if(!texture.loadFromImage(frame)) {
-            return -1;
+        for(int i = 0; i < normals.size(); i++) {
+            sf::VertexArray tri(sf::PrimitiveType::Triangles, 3);
+
+            std::vector<std::vector<float>> triangle = triangles.at(i);
+            tri[0].position = sf::Vector2f(triangle.at(0).at(0) * SCALE + offx, triangle.at(0).at(2) * SCALE + offy);
+            tri[1].position = sf::Vector2f(triangle.at(1).at(0) * SCALE + offx, triangle.at(1).at(2) * SCALE + offy);
+            tri[2].position = sf::Vector2f(triangle.at(2).at(0) * SCALE + offx, triangle.at(2).at(2) * SCALE + offy);
+
+            tri[0].color = sf::Color::White;
+            tri[1].color = sf::Color::White;
+            tri[2].color = sf::Color::White;
+            window.draw(tri);
         }
-        sf::Sprite sprite(texture);
-        window.draw(sprite);
     
         window.draw(text);
         window.draw(debug);
