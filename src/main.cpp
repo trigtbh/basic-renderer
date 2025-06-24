@@ -301,11 +301,11 @@ int main()
             }
 
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D)) {
-                cx += 100.0f / FPS;
+                cx += 500.0f / FPS;
                 update = true;
             }
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A)) {
-                cx -= 100.0f / FPS;
+                cx -= 500.0f / FPS;
                 update = true;
             }
 
