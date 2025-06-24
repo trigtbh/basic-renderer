@@ -9,10 +9,15 @@ std::array<float, 2> project(
     const std::array<float, 3>& point
 );
 
+std::array<float, 4> normalize(
+    const std::array<float, 4>& vec
+);
+
 std::array<float, 4> matmul(
     const std::array<std::array<float, 4>, 4>& a,
     const std::array<float, 4>& b
 );
+
 
 std::array<std::array<float, 4>, 4> rotateX(
     float rx

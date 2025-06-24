@@ -63,7 +63,7 @@ std::array<std::array<float, 4>, 4> TRANSLATION = {{
     {{0, 0, 0, 1}}
 }};
 
-float scale = 50;
+float scale = 10;
 
 std::array<std::array<float, 4>, 4> SCALE_MATRIX = {{
     {{scale, 0, 0, 0}},
@@ -74,6 +74,18 @@ std::array<std::array<float, 4>, 4> SCALE_MATRIX = {{
 
 
 std::array<std::array<float, 4>, 4> TRANSFORM = TRANSFORM = consolidate(TRANSLATION, consolidate(ROTATION_MATRIX_Z, SCALE_MATRIX));
+
+float cx, cy, cz = 0;
+float pitch, yaw = 0.5; 
+
+std::array<std::array<float, 4>, 4> CAMERA_POSITION = {{
+    {{1, 0, 0, cx}},
+    {{0, 1, 0, cy}},
+    {{0, 0, 1, cz}},
+    {{0, 0, 0, 1}}
+}};
+
+
 
 
 
@@ -94,25 +106,25 @@ std::array<float, 4> project(
 int main()
 {
 
-    float pitch, yaw = 0; // camera vertical, horizontal rotation
-    // no roll yet because i dont want to deal with that
-    
-
-    
-    float rotZ = 0;
-
-
 
     const unsigned int WIDTH = 1920u;
     const unsigned int HEIGHT = 1080u;
     const int FPS = 120;
 
     auto window = sf::RenderWindow(sf::VideoMode({WIDTH, HEIGHT}), "renderer");
+
+    // window.setMouseCursorGrabbed(true);
     window.setFramerateLimit(FPS);
 
-    log("Renderer v0.1");
+    // window.setMouseCursorVisible(false);
 
     
+    log("Renderer v0.1");
+
+
+    sf::Vector2i windowCenter = window.getPosition() + sf::Vector2i(window.getSize().x / 2, window.getSize().y / 2);
+    sf::Mouse::setPosition(windowCenter);
+    window.setMouseCursorVisible(false);
 
     std::string stlpath = "C:/Users/ms_lu/Downloads/utahteapot.stl";
     bool ascii = checkASCII(stlpath);
@@ -126,30 +138,17 @@ int main()
     log("(These two numbers should be the same!)");
 
 
-    
-
-
-
-
-
     if (!font.openFromFile("./Mplus.ttf")) {
         return -1;
     }
 
 
-    sf::Text text(font);    
-    text.setCharacterSize(50);
-    text.setFillColor(sf::Color::White);
-
-    debug.setCharacterSize(50);
-    debug.setFillColor(sf::Color::Green);
-    debug.move(sf::Vector2f(15, 400));
-
     auto start = std::chrono::high_resolution_clock::now();
-
     int framecount = 0;
-
     bool update = true;
+
+    bool mousecapture = true;
+
 
     
     while (window.isOpen())
@@ -161,9 +160,55 @@ int main()
                 window.close();
             }
 
+            if (window.hasFocus()) {
+            if (const auto* mouseMoved = event->getIf<sf::Event::MouseMoved>()) {
+                    int dx = mouseMoved->position.x - (sf::VideoMode::getDesktopMode().size.x / 2);
+                    int dy = mouseMoved->position.y - (sf::VideoMode::getDesktopMode().size.y / 2);
+
+                    
+                    if (dx != 0 || dy != 0) {
+                        //std::cout << dx << ", " << dy << "\n";
+                        // rotation sensitivity = 500
+                        pitch -= dy / 1000.0f; // z-correction ?
+                        yaw += dx / 1000.0f;
+                        if (pitch < 0) {
+                            pitch = 0;
+                        } else if (pitch > 1) {
+                            pitch = 1;
+                        }
+
+                        if (yaw > 1) {
+                            yaw -= 1;
+                        } 
+                        if (yaw < -1) {
+                            yaw += 1;
+                        } 
+
+
+                        std::cout << pitch << ", " << yaw << "\n";
+                        if (mousecapture) {
+                            sf::Mouse::setPosition(windowCenter, window);
+                        }  
+                    }
+                }
+            }
+
+            if (event->is<sf::Event::FocusLost>()) {
+                window.setMouseCursorVisible(true);
+                mousecapture = false;
+            }
+
+            if (event->is<sf::Event::FocusGained>()) {
+                window.setMouseCursorVisible(false);
+                mousecapture = true;
+            }
+
+            
+            
+
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left)) {
                 rotZ += (2.0f / FPS);
-                if (rotZ >= 1) { rotZ -= 1; }
+                if (rotZ >= 1) { rotZ -= 2; }
 
                 update = true;
                 ROTATION_MATRIX_Z = rotateZ(2.0f * 3.14159265f * rotZ);
@@ -177,8 +222,6 @@ int main()
                 update = true;
                 ROTATION_MATRIX_Z = rotateZ(2.0f * 3.14159265f * rotZ);
             }
-
-
         }
 
         framecount++;
@@ -189,7 +232,7 @@ int main()
             
             start = end;
         }
-
+         
         if (update) {
             TRANSFORM = consolidate(TRANSLATION, consolidate(ROTATION_MATRIX_Z, SCALE_MATRIX));  
             window.clear();
@@ -224,9 +267,16 @@ int main()
                 tri[1].position = sf::Vector2f(t1[1][0], t1[1][2]);
                 tri[2].position = sf::Vector2f(t1[2][0], t1[2][2]);
 
-                tri[0].color = sf::Color::Red;
-                tri[1].color = sf::Color::White;
-                tri[2].color = sf::Color::White;
+                if (triangles[i][0][0] > 0) {
+                    tri[0].color = sf::Color::Red;
+                    tri[1].color = sf::Color::Red;
+                    tri[2].color = sf::Color::Red;
+                } else {
+                    tri[0].color = sf::Color::White;
+                    tri[1].color = sf::Color::White;
+                    tri[2].color = sf::Color::White;
+                }
+                
                 window.draw(tri);
                 
             }

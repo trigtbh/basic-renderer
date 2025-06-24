@@ -22,6 +22,27 @@ std::array<float, 4> matmul(
 
 }
 
+std::array<float, 4> normalize(
+    const std::array<float, 4>& vec
+) {
+    float m = pow(pow(vec[0], 2) + pow(vec[1], 2) + pow(vec[2], 2), 0.5);
+    return {{
+        m*vec[0], m*vec[1], m*vec[2], vec[3]
+    }};
+};
+
+std::array<float, 3> cross(std::array<float, 3> a, std::array<float, 3> b) {
+    return std::array<float, 3>{
+        a[1]*b[2] - a[2]*b[1],
+        a[2]*b[0] - a[0]*b[2],
+        a[0]*b[1] - a[1]*b[0]
+    };
+};
+
+float dot(std::array<float, 3> a, std::array<float, 3> b) {
+    return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+};
+
 
 std::array<std::array<float, 4>, 4> rotateX(
     float rx
