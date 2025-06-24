@@ -85,6 +85,9 @@ std::array<std::array<float, 4>, 4> CAMERA_POSITION = {{
     {{0, 0, 0, 1}}
 }};
 
+const unsigned int WIDTH = 1920u;
+const unsigned int HEIGHT = 1080u;
+const int FPS = 120;
 
 
 
@@ -96,10 +99,12 @@ std::array<float, 4> project(
     std::array<float, 4> ret;
     ret = matmul(TRANSFORM, point); // Model
 
-    // faking View:
-    ret[0] -= cx;
-    ret[1] -= cy;
-    ret[2] -= cz;
+    
+    
+    point[0] -= cx;
+    point[1] -= cy;
+    point[2] -= cz;
+
     ret = matmul(rotateZ(-yaw), ret);
     ret = matmul(rotateX(-pitch), ret);
 
@@ -141,8 +146,8 @@ void drawAxes(sf::RenderWindow& window, float axisLength = 100.0f) {
         std::array<float, 4> end = project(axisLines[axis][1]);
         
         // Convert to screen coordinates - using your current mapping
-        line[0].position = sf::Vector2f(start[0], start[2]);
-        line[1].position = sf::Vector2f(end[0], end[2]);
+        line[0].position = sf::Vector2f(start[0] + WIDTH / 2, start[2] + HEIGHT / 2);
+        line[1].position = sf::Vector2f(end[0] + WIDTH / 2, end[2] + HEIGHT / 2);
         
         line[0].color = axisColors[axis];
         line[1].color = axisColors[axis];
@@ -159,10 +164,7 @@ int main()
 {
 
 
-    const unsigned int WIDTH = 1920u;
-    const unsigned int HEIGHT = 1080u;
-    const int FPS = 120;
-
+    
     auto window = sf::RenderWindow(sf::VideoMode({WIDTH, HEIGHT}), "renderer");
 
     // window.setMouseCursorGrabbed(true);
@@ -318,13 +320,17 @@ int main()
             
             start = end;
         }
-         
+
+
+
+
         if (update) {
             TRANSFORM = consolidate(TRANSLATION, consolidate(ROTATION_MATRIX_Z, SCALE_MATRIX));  
             window.clear();
             sf::VertexArray tri(sf::PrimitiveType::Triangles, 3);
 
             int drawn = 0;
+            
             for(int i = 0; i < normals.size(); i++) {
                 
 
