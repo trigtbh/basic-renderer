@@ -25,11 +25,21 @@ std::array<float, 4> matmul(
 std::array<float, 4> normalize(
     const std::array<float, 4>& vec
 ) {
-    float m = pow(pow(vec[0], 2) + pow(vec[1], 2) + pow(vec[2], 2), 0.5);
+    float m = 1.0f/pow(pow(vec[0], 2) + pow(vec[1], 2) + pow(vec[2], 2), 0.5);
     return {{
         m*vec[0], m*vec[1], m*vec[2], vec[3]
     }};
 };
+
+std::array<float, 3> normalize(
+    const std::array<float, 3>& vec
+) {
+    float m = 1.0f/pow(pow(vec[0], 2) + pow(vec[1], 2) + pow(vec[2], 2), 0.5);
+    return {{
+        m*vec[0], m*vec[1], m*vec[2]
+    }};
+};
+
 
 std::array<float, 3> cross(std::array<float, 3> a, std::array<float, 3> b) {
     return std::array<float, 3>{

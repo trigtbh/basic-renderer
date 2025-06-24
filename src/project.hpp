@@ -9,8 +9,16 @@ std::array<float, 2> project(
     const std::array<float, 3>& point
 );
 
+std::array<float, 3> cross(std::array<float, 3> a, std::array<float, 3> b);
+float dot(std::array<float, 3> a, std::array<float, 3> b);
+
+
 std::array<float, 4> normalize(
     const std::array<float, 4>& vec
+);
+
+std::array<float, 3> normalize(
+    const std::array<float, 3>& vec
 );
 
 std::array<float, 4> matmul(
