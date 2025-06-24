@@ -52,9 +52,9 @@ bool checkASCII(std::string filepath) {
 float rotZ = 0;
 std::array<std::array<float, 4>, 4> ROTATION_MATRIX_Z = rotateZ(rotZ);
 
-float x = 500;
+float x = 0;
 float y = 0;
-float z = 500;
+float z = 0;
 
 std::array<std::array<float, 4>, 4> TRANSLATION = {{
     {{1, 0, 0, x}},
@@ -100,7 +100,8 @@ std::array<float, 4> project(
     ret[0] -= cx;
     ret[1] -= cy;
     ret[2] -= cz;
-
+    ret = matmul(rotateZ(-yaw), ret);
+    ret = matmul(rotateX(-pitch), ret);
 
 
 
@@ -242,29 +243,25 @@ int main()
                 if (dx != 0 || dy != 0) {
                     update = true;
                     
-                    // Adjust sensitivity for better control
-                    float sensitivity = 0.005f;
+                    float sensitivity = 0.00025f;
                     yaw += dx * sensitivity;
-                    pitch -= dy * sensitivity;  // Inverted for natural mouse look
+                    pitch += dy * sensitivity;  
                     
-                    // Clamp pitch to prevent gimbal lock
-                    const float maxPitch = 1.57f;  // ~90 degrees in radians
+                    
+                    const float maxPitch = 1.57f; 
                     if (pitch > maxPitch) {
                         pitch = maxPitch;
                     }
                     if (pitch < -maxPitch) {
                         pitch = -maxPitch;
                     }
-                    
-                    // Wrap yaw around 2π
-                    while (yaw > 6.28318f) {  // 2π
+                    while (yaw > 6.28318f) { 
                         yaw -= 6.28318f;
                     }
                     while (yaw < 0) {
                         yaw += 6.28318f;
                     }
 
-                    std::cout << "pitch: " << pitch << ", yaw: " << yaw << "\n";
                     if (mousecapture) {
                         sf::Mouse::setPosition(windowCenter, window);
                     }  
@@ -327,19 +324,21 @@ int main()
             window.clear();
             sf::VertexArray tri(sf::PrimitiveType::Triangles, 3);
 
+            int drawn = 0;
             for(int i = 0; i < normals.size(); i++) {
                 
 
-                float dp; // simulating viewport vector of (0, 1, 0)
                 std::array<float, 4> normal = normals[i];
 
                 normal = matmul(ROTATION_MATRIX_Z, normal);
+                normal = matmul(rotateZ(-yaw), normal);
+                normal = matmul(rotateX(-pitch), normal);
 
-
-                if (normal[1] >= 0) {
+                if (normal[1] < 0) {
                     continue;
                 }
-
+                
+                drawn++;
 
                 std::array<std::array<float, 4>, 3> triangle = triangles[i];
 
@@ -352,9 +351,9 @@ int main()
                 //std::array<std::array<float, 4>, 3> t1 = triangle;
 
 
-                tri[0].position = sf::Vector2f(t1[0][0], t1[0][2]);
-                tri[1].position = sf::Vector2f(t1[1][0], t1[1][2]);
-                tri[2].position = sf::Vector2f(t1[2][0], t1[2][2]);
+                tri[0].position = sf::Vector2f(t1[0][0] + WIDTH / 2, t1[0][2] + HEIGHT / 2);
+                tri[1].position = sf::Vector2f(t1[1][0] + WIDTH / 2, t1[1][2] + HEIGHT / 2);
+                tri[2].position = sf::Vector2f(t1[2][0] + WIDTH / 2, t1[2][2] + HEIGHT / 2);
 
                 if (triangles[i][0][0] > 0) {
                     tri[0].color = sf::Color::Red;
@@ -377,6 +376,7 @@ int main()
             drawAxes(window, 100.0f);
             
 
+            std::cout << "Drawn: " << drawn << "\n";
             window.display();    
             
             update = false;      
