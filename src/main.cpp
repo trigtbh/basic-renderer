@@ -57,10 +57,10 @@ float y = 0;
 float z = 500;
 
 std::array<std::array<float, 4>, 4> TRANSLATION = {{
-    {{1, 0, 0, x}},
-    {{0, 1, 0, y}},
-    {{0, 0, 1, z}},
-    {{0, 0, 0, 1}}
+    {{1, 0, 0, 0}},
+    {{0, 1, 0, 0}},
+    {{0, 0, 1, 0}},
+    {{x, y, z, 1}}
 }};
 
 float scale = 10;
@@ -76,13 +76,13 @@ std::array<std::array<float, 4>, 4> SCALE_MATRIX = {{
 std::array<std::array<float, 4>, 4> MODEL = consolidate(TRANSLATION, consolidate(ROTATION_MATRIX_Z, SCALE_MATRIX));
 
 float cx = 0;
-float cy = 0;
+float cy = -10;
 float cz = 0;
 float yaw = 0.5f;
 float pitch = 0; 
-float lookx = cos(pitch * 2 * 3.14159) * sin(yaw * 2 * 3.14159);
-float looky = sin(pitch * 2 * 3.14159);
-float lookz = cos(pitch * 2 * 3.14159) * cos(yaw * 2 * 3.14159);
+float lookx = cos(pitch * 2 * 3.14159) * cos(yaw * 2 * 3.14159);
+float looky = cos(pitch * 2 * 3.14159) * sin(yaw * 2 * 3.14159);
+float lookz = sin(pitch * 2 * 3.14159);
 
 std::array<std::array<float, 4>, 4> CAMERA_POSITION = {{
     {{1, 0, 0, cx}},
@@ -112,12 +112,54 @@ std::array<float, 4> project(
 ) {
     std::array<float, 4> ret;
     ret = matmul(MODEL, point); // Model
-    ret = matmul(VIEW, point); // VIEW
+    ret = matmul(VIEW, ret); // VIEW
 
+    ret[0] += 500;
+    ret[2] += 500;
     return ret;
 
 }
 
+
+void drawAxes(sf::RenderWindow& window, float axisLength = 100.0f) {
+    // Create axis lines - X (red), Y (green), Z (blue)
+    std::vector<std::array<std::array<float, 4>, 2>> axisLines = {
+        // X-axis (red) - from origin to positive X
+        {{
+            {{0, 0, 0, 1}},  // origin
+            {{axisLength, 0, 0, 1}}   // X direction
+        }},
+        // Y-axis (green) - from origin to positive Y  
+        {{
+            {{0, 0, 0, 1}},  // origin
+            {{0, axisLength, 0, 1}}   // Y direction
+        }},
+        // Z-axis (blue) - from origin to positive Z
+        {{
+            {{0, 0, 0, 1}},  // origin
+            {{0, 0, axisLength, 1}}   // Z direction
+        }}
+    };
+    
+    sf::Color axisColors[3] = {sf::Color::Red, sf::Color::Green, sf::Color::Blue};
+    
+    for(int axis = 0; axis < 3; axis++) {
+        sf::VertexArray line(sf::PrimitiveType::Lines, 2);
+        
+        // Project both points of the line
+        std::array<float, 4> start = project(axisLines[axis][0]);
+        std::array<float, 4> end = project(axisLines[axis][1]);
+        
+        // Convert to screen coordinates - using your current mapping
+        line[0].position = sf::Vector2f(start[0], start[2]);
+        line[1].position = sf::Vector2f(end[0], end[2]);
+        
+        line[0].color = axisColors[axis];
+        line[1].color = axisColors[axis];
+        
+        window.draw(line);
+    }
+}
 
 bool frameskip = false;
 
@@ -190,42 +232,50 @@ int main()
                         update = true;
                         scale -= 5;
                     }
+                    SCALE_MATRIX = {{
+                        {{scale, 0, 0, 0}},
+                        {{0, scale, 0, 0}},
+                        {{0, 0, scale, 0}},
+                        {{0, 0, 0, 1}}
+                    }};
                 }
 
 
             if (const auto* mouseMoved = event->getIf<sf::Event::MouseMoved>()) {
-                    int dx = mouseMoved->position.x - (sf::VideoMode::getDesktopMode().size.x / 2);
-                    int dy = mouseMoved->position.y - (sf::VideoMode::getDesktopMode().size.y / 2);
+                int dx = mouseMoved->position.x - (sf::VideoMode::getDesktopMode().size.x / 2);
+                int dy = mouseMoved->position.y - (sf::VideoMode::getDesktopMode().size.y / 2);
 
+                if (dx != 0 || dy != 0) {
+                    update = true;
+                    pitch -= dy / (sf::VideoMode::getDesktopMode().size.x / 2.0f);
+                    yaw += dx / (sf::VideoMode::getDesktopMode().size.x / 2.0f);
                     
-                    if (dx != 0 || dy != 0) {
-                        update = true;
-                        pitch -= dy / (sf::VideoMode::getDesktopMode().size.x / 2.0f); // z-correction ?
-                        
-                        yaw += dx / (sf::VideoMode::getDesktopMode().size.x / 2.0f);
-                        if (pitch < 0) {
-                            pitch = 0;
-                        } else if (pitch > 0.5) {
-                            pitch = 0.5;
-                        }
-
-                        if (yaw > 1) {
-                            yaw -= 1;
-                        } 
-                        if (yaw < 0) {
-                            yaw += 1;
-                        } 
-
-                        lookx = cos(pitch * 2 * 3.14159) * sin(yaw * 2 * 3.14159);
-                        looky = sin(pitch * 2 * 3.14159);
-                        lookz = cos(pitch * 2 * 3.14159) * cos(yaw * 2 * 3.14159);
-
-                        std::cout << pitch << ", " << yaw << "\n";
-                        if (mousecapture) {
-                            sf::Mouse::setPosition(windowCenter, window);
-                        }  
+                    // Clamp pitch instead of wrapping to prevent gimbal lock
+                    if (pitch > 0.25f) {  // 90 degrees
+                        pitch = 0.25f;
                     }
+                    if (pitch < -0.25f) { // -90 degrees
+                        pitch = -0.25f;
+                    }
+
+                    // Keep yaw wrapping
+                    if (yaw > 1) {
+                        yaw -= 1;
+                    } 
+                    if (yaw < 0) {
+                        yaw += 1;
+                    } 
+
+                    lookx = cos(pitch * 2 * 3.14159) * cos(yaw * 2 * 3.14159);
+                    looky = cos(pitch * 2 * 3.14159) * sin(yaw * 2 * 3.14159);
+                    lookz = sin(pitch * 2 * 3.14159);
+
+                    std::cout << pitch << ", " << yaw << "\n";
+                    if (mousecapture) {
+                        sf::Mouse::setPosition(windowCenter, window);
+                    }  
                 }
+            }
             }
 
             if (event->is<sf::Event::FocusLost>()) {
@@ -261,9 +311,6 @@ int main()
 
         framecount++;
 
-        update = true;
-        cx -= 1;
-
         if (framecount % FPS == 0) {
             auto end = std::chrono::high_resolution_clock::now();
             double framerate = FPS / std::chrono::duration<double>(end - start).count();
@@ -297,12 +344,7 @@ int main()
                 float dp; // simulating viewport vector of (0, 1, 0)
                 std::array<float, 4> normal = normals[i];
 
-                normal = matmul(ROTATION_MATRIX_Z, normal);
-
-
-                if (normal[1] >= 0) {
-                    continue;
-                }
+                
 
 
                 std::array<std::array<float, 4>, 3> triangle = triangles[i];
@@ -316,18 +358,23 @@ int main()
                 //std::array<std::array<float, 4>, 3> t1 = triangle;
 
 
-                tri[0].position = sf::Vector2f(t1[0][0], t1[0][2]);
+                // tri[0].position = sf::Vector2f((t1[0][0] * 0.5f + 0.5f) * WIDTH, (1.0f - (t1[0][2] * 0.5f + 0.5f)) * HEIGHT);
+                // tri[1].position = sf::Vector2f((t1[1][0] * 0.5f + 0.5f) * WIDTH, (1.0f - (t1[1][2] * 0.5f + 0.5f)) * HEIGHT);
+                // tri[2].position = sf::Vector2f((t1[2][0] * 0.5f + 0.5f) * WIDTH, (1.0f - (t1[2][2] * 0.5f + 0.5f)) * HEIGHT);
+
+                 tri[0].position = sf::Vector2f(t1[0][0], t1[0][2]);
                 tri[1].position = sf::Vector2f(t1[1][0], t1[1][2]);
                 tri[2].position = sf::Vector2f(t1[2][0], t1[2][2]);
-
                 
                 tri[0].color = sf::Color::White;
                 tri[1].color = sf::Color::White;
                 tri[2].color = sf::Color::White;
-                
-                window.draw(tri);
+                  window.draw(tri);
                 
             }
+
+            // Draw coordinate axes for debugging
+            drawAxes(window, 50.0f);
 
             // system("pause");
         
