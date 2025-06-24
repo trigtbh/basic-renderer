@@ -57,10 +57,10 @@ float y = 0;
 float z = 500;
 
 std::array<std::array<float, 4>, 4> TRANSLATION = {{
-    {{1, 0, 0, 0}},
-    {{0, 1, 0, 0}},
-    {{0, 0, 1, 0}},
-    {{x, y, z, 1}}
+    {{1, 0, 0, x}},
+    {{0, 1, 0, y}},
+    {{0, 0, 1, z}},
+    {{0, 0, 0, 1}}
 }};
 
 float scale = 10;
@@ -73,16 +73,10 @@ std::array<std::array<float, 4>, 4> SCALE_MATRIX = {{
 }};
 
 
-std::array<std::array<float, 4>, 4> MODEL = consolidate(TRANSLATION, consolidate(ROTATION_MATRIX_Z, SCALE_MATRIX));
+std::array<std::array<float, 4>, 4> TRANSFORM = TRANSFORM = consolidate(TRANSLATION, consolidate(ROTATION_MATRIX_Z, SCALE_MATRIX));
 
-float cx = 0;
-float cy = -10;
-float cz = 0;
-float yaw = 0.5f;
-float pitch = 0; 
-float lookx = cos(pitch * 2 * 3.14159) * cos(yaw * 2 * 3.14159);
-float looky = cos(pitch * 2 * 3.14159) * sin(yaw * 2 * 3.14159);
-float lookz = sin(pitch * 2 * 3.14159);
+float cx, cy, cz = 0;
+float pitch, yaw = 0.5; 
 
 std::array<std::array<float, 4>, 4> CAMERA_POSITION = {{
     {{1, 0, 0, cx}},
@@ -91,18 +85,7 @@ std::array<std::array<float, 4>, 4> CAMERA_POSITION = {{
     {{0, 0, 0, 1}}
 }};
 
-std::array<float, 3> look_array = {lookx, looky, lookz};
-auto forward = normalize(look_array);
-std::array<float, 3> crossproduct = cross({{0, 0, 1}}, forward);
-auto right = normalize(crossproduct);
-auto up = cross(forward, right);
 
-std::array<std::array<float, 4>, 4> VIEW = {{
-    {{right[0], up[0], -forward[0], 0}},
-    {{right[1], up[1], -forward[1], 0}},
-    {{right[2], up[2], -forward[2], 0}},
-    {{-dot(right, {{cx, cy, cz}}), -dot(up, {{cx, cy, cz}}), dot(forward, {{cx, cy, cz}}), 1}}
-}};
 
 
 
@@ -111,14 +94,20 @@ std::array<float, 4> project(
     std::array<float, 4> point 
 ) {
     std::array<float, 4> ret;
-    ret = matmul(MODEL, point); // Model
-    ret = matmul(VIEW, ret); // VIEW
+    ret = matmul(TRANSFORM, point); // Model
 
-    ret[0] += 500;
-    ret[2] += 500;
+    // faking View:
+    ret[0] -= cx;
+    ret[1] -= cy;
+    ret[2] -= cz;
+
+
+
+
     return ret;
 
 }
+
 
 
 void drawAxes(sf::RenderWindow& window, float axisLength = 100.0f) {
@@ -137,7 +126,7 @@ void drawAxes(sf::RenderWindow& window, float axisLength = 100.0f) {
         // Z-axis (blue) - from origin to positive Z
         {{
             {{0, 0, 0, 1}},  // origin
-            {{0, 0, axisLength, 1}}   // Z direction
+            {{0, 0, -axisLength, 1}}   // Z direction
         }}
     };
     
@@ -161,7 +150,9 @@ void drawAxes(sf::RenderWindow& window, float axisLength = 100.0f) {
     }
 }
 
-bool frameskip = false;
+
+
+
 
 int main()
 {
@@ -209,6 +200,7 @@ int main()
 
     bool mousecapture = true;
 
+    bool frameskip = false;
 
     
     while (window.isOpen())
@@ -242,35 +234,37 @@ int main()
 
 
             if (const auto* mouseMoved = event->getIf<sf::Event::MouseMoved>()) {
-                int dx = mouseMoved->position.x - (sf::VideoMode::getDesktopMode().size.x / 2);
-                int dy = mouseMoved->position.y - (sf::VideoMode::getDesktopMode().size.y / 2);
+                // Fix: Use window center instead of desktop center
+                sf::Vector2i windowCenter = sf::Vector2i(window.getSize().x / 2, window.getSize().y / 2);
+                int dx = mouseMoved->position.x - windowCenter.x;
+                int dy = mouseMoved->position.y - windowCenter.y;
 
                 if (dx != 0 || dy != 0) {
                     update = true;
-                    pitch -= dy / (sf::VideoMode::getDesktopMode().size.x / 2.0f);
-                    yaw += dx / (sf::VideoMode::getDesktopMode().size.x / 2.0f);
                     
-                    // Clamp pitch instead of wrapping to prevent gimbal lock
-                    if (pitch > 0.25f) {  // 90 degrees
-                        pitch = 0.25f;
+                    // Adjust sensitivity for better control
+                    float sensitivity = 0.005f;
+                    yaw += dx * sensitivity;
+                    pitch -= dy * sensitivity;  // Inverted for natural mouse look
+                    
+                    // Clamp pitch to prevent gimbal lock
+                    const float maxPitch = 1.57f;  // ~90 degrees in radians
+                    if (pitch > maxPitch) {
+                        pitch = maxPitch;
                     }
-                    if (pitch < -0.25f) { // -90 degrees
-                        pitch = -0.25f;
+                    if (pitch < -maxPitch) {
+                        pitch = -maxPitch;
+                    }
+                    
+                    // Wrap yaw around 2π
+                    while (yaw > 6.28318f) {  // 2π
+                        yaw -= 6.28318f;
+                    }
+                    while (yaw < 0) {
+                        yaw += 6.28318f;
                     }
 
-                    // Keep yaw wrapping
-                    if (yaw > 1) {
-                        yaw -= 1;
-                    } 
-                    if (yaw < 0) {
-                        yaw += 1;
-                    } 
-
-                    lookx = cos(pitch * 2 * 3.14159) * cos(yaw * 2 * 3.14159);
-                    looky = cos(pitch * 2 * 3.14159) * sin(yaw * 2 * 3.14159);
-                    lookz = sin(pitch * 2 * 3.14159);
-
-                    std::cout << pitch << ", " << yaw << "\n";
+                    std::cout << "pitch: " << pitch << ", yaw: " << yaw << "\n";
                     if (mousecapture) {
                         sf::Mouse::setPosition(windowCenter, window);
                     }  
@@ -297,8 +291,6 @@ int main()
 
                 update = true;
                 ROTATION_MATRIX_Z = rotateZ(2.0f * 3.14159265f * rotZ);
-
-
             }
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right)) {
                 rotZ -= (2.0f / FPS);
@@ -307,7 +299,19 @@ int main()
                 update = true;
                 ROTATION_MATRIX_Z = rotateZ(2.0f * 3.14159265f * rotZ);
             }
+
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D)) {
+                cx += 100.0f / FPS;
+                update = true;
+            }
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A)) {
+                cx -= 100.0f / FPS;
+                update = true;
+            }
+
         }
+
+       
 
         framecount++;
 
@@ -317,24 +321,9 @@ int main()
             
             start = end;
         }
-
+         
         if (update) {
-            MODEL = consolidate(TRANSLATION, consolidate(ROTATION_MATRIX_Z, SCALE_MATRIX));  
-            
-            look_array = {lookx, looky, lookz};
-            forward = normalize(look_array);
-            crossproduct = cross({{0, 0, 1}}, forward);
-            right = normalize(crossproduct);
-            up = cross(forward, right);
-
-            VIEW = {{
-                {{right[0], up[0], -forward[0], 0}},
-                {{right[1], up[1], -forward[1], 0}},
-                {{right[2], up[2], -forward[2], 0}},
-                {{-dot(right, {{cx, cy, cz}}), -dot(up, {{cx, cy, cz}}), dot(forward, {{cx, cy, cz}}), 1}}
-            }};
-            
-            
+            TRANSFORM = consolidate(TRANSLATION, consolidate(ROTATION_MATRIX_Z, SCALE_MATRIX));  
             window.clear();
             sf::VertexArray tri(sf::PrimitiveType::Triangles, 3);
 
@@ -344,7 +333,12 @@ int main()
                 float dp; // simulating viewport vector of (0, 1, 0)
                 std::array<float, 4> normal = normals[i];
 
-                
+                normal = matmul(ROTATION_MATRIX_Z, normal);
+
+
+                if (normal[1] >= 0) {
+                    continue;
+                }
 
 
                 std::array<std::array<float, 4>, 3> triangle = triangles[i];
@@ -358,27 +352,29 @@ int main()
                 //std::array<std::array<float, 4>, 3> t1 = triangle;
 
 
-                // tri[0].position = sf::Vector2f((t1[0][0] * 0.5f + 0.5f) * WIDTH, (1.0f - (t1[0][2] * 0.5f + 0.5f)) * HEIGHT);
-                // tri[1].position = sf::Vector2f((t1[1][0] * 0.5f + 0.5f) * WIDTH, (1.0f - (t1[1][2] * 0.5f + 0.5f)) * HEIGHT);
-                // tri[2].position = sf::Vector2f((t1[2][0] * 0.5f + 0.5f) * WIDTH, (1.0f - (t1[2][2] * 0.5f + 0.5f)) * HEIGHT);
-
-                 tri[0].position = sf::Vector2f(t1[0][0], t1[0][2]);
+                tri[0].position = sf::Vector2f(t1[0][0], t1[0][2]);
                 tri[1].position = sf::Vector2f(t1[1][0], t1[1][2]);
                 tri[2].position = sf::Vector2f(t1[2][0], t1[2][2]);
+
+                if (triangles[i][0][0] > 0) {
+                    tri[0].color = sf::Color::Red;
+                    tri[1].color = sf::Color::Red;
+                    tri[2].color = sf::Color::Red;
+                } else {
+                    tri[0].color = sf::Color::White;
+                    tri[1].color = sf::Color::White;
+                    tri[2].color = sf::Color::White;
+                }
                 
-                tri[0].color = sf::Color::White;
-                tri[1].color = sf::Color::White;
-                tri[2].color = sf::Color::White;
-                  window.draw(tri);
+                window.draw(tri);
                 
             }
-
-            // Draw coordinate axes for debugging
-            drawAxes(window, 50.0f);
 
             // system("pause");
         
             window.draw(debug);
+
+            drawAxes(window, 100.0f);
             
 
             window.display();    
