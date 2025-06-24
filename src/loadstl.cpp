@@ -4,7 +4,6 @@
 #include <fstream>
 #include <math.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <iostream>
 
 float buffloat(char buffer[4]) {
@@ -25,7 +24,7 @@ int realtris(char buffer[4]) {
 }
 
 
-std::vector<std::array<float, 3>> getNormals(std::string filepath) {
+std::vector<std::array<float, 4>> getNormals(std::string filepath) {
     std::ifstream file(filepath, std::ios::binary | std::ios::ate); // open at end
     if (!file) {
         throw std::invalid_argument("invalid file");
@@ -37,9 +36,9 @@ std::vector<std::array<float, 3>> getNormals(std::string filepath) {
 
 
 
-    std::vector<std::array<float, 3>> normals;
+    std::vector<std::array<float, 4>> normals;
     for (int i = 0; i < tris; i++) {
-        std::array<float, 3> normal;
+        std::array<float, 4> normal;
         for (int f = 0; f < 3; f++) {
             file.seekg(84 + 50*i + 4 * f);
             float fl;
@@ -49,6 +48,7 @@ std::vector<std::array<float, 3>> getNormals(std::string filepath) {
             
             normal[f] = fl;
         }
+        normal[3] = 0; // w = 0 for normals
         normals.push_back(normal);
 
         
@@ -56,7 +56,7 @@ std::vector<std::array<float, 3>> getNormals(std::string filepath) {
     return normals;
 }
 
-std::vector<std::array<std::array<float, 3>, 3>> getTriangles(std::string filepath) {
+std::vector<std::array<std::array<float, 4>, 3>> getTriangles(std::string filepath) {
     std::ifstream file(filepath, std::ios::binary | std::ios::ate); // open at end
     if (!file) {
         throw std::invalid_argument("invalid file");
@@ -66,12 +66,12 @@ std::vector<std::array<std::array<float, 3>, 3>> getTriangles(std::string filepa
     int tris;
     file.read(reinterpret_cast<char*>(&tris), sizeof(int));
     
-    std::vector<std::array<std::array<float, 3>, 3>> triangles;
+    std::vector<std::array<std::array<float, 4>, 3>> triangles;
     for (int i = 0; i < tris; i++) {
 
-        std::array<std::array<float, 3>, 3> triangle;
+        std::array<std::array<float, 4>, 3> triangle;
         for (int v = 0; v < 3; v++) {
-            std::array<float, 3> vertex;
+            std::array<float, 4> vertex;
             
             for (int f = 0; f < 3; f++) {
                 file.seekg(84+50*i + 12 + 12*v + 4*f);
@@ -81,6 +81,7 @@ std::vector<std::array<std::array<float, 3>, 3>> getTriangles(std::string filepa
 
                 vertex[f] = fl;
             }
+            vertex[3] = 1; // w = 1 for points
             triangle[v] = vertex;
         }
         triangles.push_back(triangle);

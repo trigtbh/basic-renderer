@@ -1,0 +1,35 @@
+#ifndef PROJECT_HPP
+#define PROJECT_HPP
+
+#include <array>
+
+std::array<float, 2> project(
+    const std::array<float, 3>& cameraPos,
+    const std::array<float, 3>& cameraVec,
+    const std::array<float, 3>& point
+);
+
+std::array<float, 4> matmul(
+    const std::array<std::array<float, 4>, 4>& a,
+    const std::array<float, 4>& b
+);
+
+std::array<std::array<float, 4>, 4> rotateX(
+    float rx
+);
+
+std::array<std::array<float, 4>, 4> rotateY(
+    float ry
+);
+
+
+std::array<std::array<float, 4>, 4> rotateZ(
+    float rz
+);
+
+std::array<std::array<float, 4>, 4> consolidate(
+    const std::array<std::array<float, 4>, 4>& a,
+    const std::array<std::array<float, 4>, 4>& b
+);
+
+#endif
